@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Container, } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
-const AddComment = ({ onSubmit, postId }) => {
+const AddComment = ({ onSubmit }) => {
     const [errorMessage, setErrorMessage] = useState('');
     const [formData, setFormData] = useState({
         comment: ''
@@ -16,21 +16,51 @@ const AddComment = ({ onSubmit, postId }) => {
 
     const [comments, setComments] = useState([]);
 
+    
+    const token = localStorage.getItem('accessToken');
 
+    const {id} = useParams();
+
+
+    // useEffect(() => {
+    //     const fetchproductData = async () => {
+      
+    //       try {
+    //         const response = await fetch(`http://localhost:5000/api/comments`, {
+    //           headers: {
+    //             'Authorization': token
+    //           }
+    //         });
+    //         const data = await response.json();
+    //         setComments(data);
+    //         console.log(data)
+    //       } catch (error) {
+    //         console.error('Error fetching product data:', error);
+    //       }
+    //     };
+    //     fetchproductData();
+    //   }, [id]);
+
+    
     useEffect(() => {
-        const fetchComments = async () => {
-            try {
-                const response = await fetch(`http://localhost:5000/api/comments/${postId}`);
-                const data = await response.json();
-                setComments(data);
-            } catch (error) {
-                console.error('Error fetching comments:', error);
+        const fetchPosts = () => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', `http://localhost:5000/api/getPostId/${id}`, true);
+          xhr.setRequestHeader('Authorization', token);
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+              if (xhr.status === 200) {
+                setComments(JSON.parse(xhr.responseText));
+                console.log(comments.id);
+              } else {
+                console.error('Error fetching products:', xhr.statusText);
+              }
             }
+          };
+          xhr.send();
         };
-
-        fetchComments();
-    }, [postId]);
-
+        fetchPosts();
+      }, []);
 
 
     const handleShowAllProducts = () => {
@@ -40,7 +70,6 @@ const AddComment = ({ onSubmit, postId }) => {
     const handleCancel = () => {
         navigate('/allPost');
     }
-    const token = localStorage.getItem('accessToken');
 
     const handleSubmit = (e, id) => {
         e.preventDefault();
@@ -48,10 +77,17 @@ const AddComment = ({ onSubmit, postId }) => {
             setErrorMessage('All fields are required!');
             return;
         }
+
+
+       
+
         const { comment } = formData;
 
+
+        
+
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `http://localhost:5000/api/addComment/${postId}`, true);
+        xhr.open('POST', `http://localhost:5000/api/addComment/${id}`, true);
         xhr.setRequestHeader('Authorization', token);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function () {
@@ -76,13 +112,13 @@ const AddComment = ({ onSubmit, postId }) => {
     return (
         <Container>
             {/* <h2>Comments for Post {postId}</h2> */}
-            <ul>
+            {/* <ul>
                 {comments.map((comment) => (
                     <li key={comment.id}>
-                        {comment.user}: {comment.text}
+                        {comment.id}
                     </li>
                 ))}
-            </ul>
+            </ul> */}
             <h1 className="text-center mt-5">Add Comment</h1>
             <div className="justify-content-center mt-5">
                 <div md={6}>

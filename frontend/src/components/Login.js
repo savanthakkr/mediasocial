@@ -92,6 +92,10 @@ const Login = () => {
     //     // console.log(token);
     // };
 
+    const routeChange = () =>{ 
+      let path = `/register`; 
+      navigate(path);
+    }
 
     // show token on console when user can login success 
 
@@ -124,6 +128,7 @@ const Login = () => {
                         Login
                     </Button>
                 </Form>
+                <button type="submit" className="btn btn-primary" onClick={routeChange}>Register</button>
             </div>
             
         </Container>

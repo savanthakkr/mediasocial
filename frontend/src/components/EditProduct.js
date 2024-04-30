@@ -6,20 +6,23 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 const UpdateProduct = () => {
 
   const navigate = useNavigate();
-  const {id} = useParams();
+  const { id } = useParams();
+
+  const [formData, setFormData] = useState({
+    comment: ''
+  });
 
   const token = localStorage.getItem('accessToken');
-  // const bookId = localStorage.getItem('accessBookId');
 
- 
+
 
   const [productData, setproductData] = useState({});
 
   useEffect(() => {
     const fetchproductData = async () => {
-  
+
       try {
-        const response = await fetch(`http://localhost:5000/api/productById/${id}`, {
+        const response = await fetch(`http://localhost:5000/api/getPostId/${id}`, {
           headers: {
             'Authorization': token
           }
@@ -27,6 +30,7 @@ const UpdateProduct = () => {
         const data = await response.json();
         setproductData(data);
         console.log(data)
+        console.log(productData.id);
       } catch (error) {
         console.error('Error fetching product data:', error);
       }
@@ -52,9 +56,9 @@ const UpdateProduct = () => {
           Authorization: token,
         },
       };
-
+      console.log(id);
       const xhr = new XMLHttpRequest();
-      xhr.open('PUT', `http://localhost:5000/api/updateProduct/${productData.id}`, true);
+      xhr.open('POST', `http://localhost:5000/api/addComment/${id}`, true);
       xhr.setRequestHeader('Authorization', token);
       xhr.setRequestHeader('Content-Type', 'application/json');
 
@@ -62,7 +66,7 @@ const UpdateProduct = () => {
         if (xhr.status === 200) {
           const response = JSON.parse(xhr.responseText);
           console.log(response.data);
-          navigate('/allProducts');
+          navigate('/allPost');
         } else {
           console.error('Error updating product:', xhr.statusText);
         }
@@ -83,42 +87,9 @@ const UpdateProduct = () => {
       <div className="container mt-5">
         <h2>Update product</h2>
         <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label htmlFor="id" className="form-label">
-              ID  
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              id="id"
-              name="id"
-              value={productData.id || ''} 
-              readOnly
-            />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="name" className="form-label">Name</label>
-            <input type="text" className="form-control" id="name" name="name" value={productData.name} onChange={handleChange} />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="description" className="form-label">Description</label>
-            <input type="text" className="form-control" id="description" name="description" value={productData.description} onChange={handleChange} />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="categoryId" className="form-label">category Id</label>
-            <input type="text" className="form-control" id="categoryId" name="categoryId" value={productData.categoryId} onChange={handleChange} />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="price" className="form-label">price</label>
-            <input type="text" className="form-control" id="price" name="price" value={productData.price} onChange={handleChange} />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="author_id" className="form-label">images</label>
-            <input type="text" className="form-control" id="author_id" name="author_id" value={productData.images} onChange={handleChange} />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="createdBy" className="form-label">created By</label>
-            <input type="text" className="form-control" id="createdBy" name="createdBy" value={productData.createdBy } onChange={handleChange} />
+          <div className="form-group mx-3 mt-3">
+            <label htmlFor="comment">comment</label>
+            <input type="text" className="form-control" id="comment" name="comment" value={setFormData.comment} onChange={handleChange} />
           </div>
           <button type="submit" className="btn btn-primary">Update product</button>
         </form>

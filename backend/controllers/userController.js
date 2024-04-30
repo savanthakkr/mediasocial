@@ -149,16 +149,24 @@ const sendPasswordOTP = async (req, res) => {
 
 const registerUser = async (req, res) => {
   try {
-    const {username, email, password } = req.body;
 
 
-    const result = await sequelize.query(
-      'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-      {
-        replacements: [username, email, password],
-        type: QueryTypes.INSERT
-      }
-    );
+    const existingUser = await sequelize.query('SELECT * FROM users WHERE email');
+
+    const { email, password, name } = req.body;
+
+
+    if(!existingUser){
+      const result = await sequelize.query(
+        'INSERT INTO users (email, password, name) VALUES (?, ?, ?)',
+        {
+          replacements: [email, password, name],
+          type: QueryTypes.INSERT
+        }
+      );
+    }else{
+      console.log("user already register ");
+    }
   } catch (error) {
     console.error('Error registering user:', error);
     res.status(500).json({ error: 'Internal server error' });

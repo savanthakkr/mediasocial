@@ -15,7 +15,6 @@ import ForgatePass from './components/forgatePass';
 import AddPost from './components/addPost';
 import AllPost from './components/allPost';
 import AddComment from './components/addComent';
-import FollowButton from './components/followButton';
 
 function App() {
   return (

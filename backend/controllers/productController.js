@@ -25,7 +25,7 @@ const { verifyToken } = require('../middlewares/roleMiddleware');
 //     }
 
 //     if (images == undefined || images == null) throw new Error("file not found!");
-    
+
 //     let savePath = `/public/assets/product/${Date.now()}.${images.name.split(".").pop()}`
 
 //     await new Promise((resolve, reject) => {
@@ -46,7 +46,7 @@ const { verifyToken } = require('../middlewares/roleMiddleware');
 //     );
 //     res.json({ message: 'Product created!', id: result[0] });
 
-    
+
 //   } catch (error) {
 //     console.error('Error creating product:', error);
 //     res.status(500).json({ error: 'Internal server error' });
@@ -62,7 +62,7 @@ const createProduct = async (req, res) => {
     const userRole = req.user.userRole;
     console.log(userRole);
     console.log(images);
-    
+
     const dirExists = fs.existsSync(`public/assets/`);
     if (!dirExists) {
       fs.mkdirSync(`public/assets/`, { recursive: true });
@@ -77,11 +77,11 @@ const createProduct = async (req, res) => {
         throw new Error("Image or image name is undefined");
       }
 
-    const savePath = `/public/assets/${Date.now()}.${image.name.split(".").pop()}`;
+      const savePath = `/public/assets/${Date.now()}.${image.name.split(".").pop()}`;
 
       // Move the file to the destination
-    await new Promise((resolve, reject) => {
-      image.mv(path.join(__dirname, ".." + savePath), (err) => {
+      await new Promise((resolve, reject) => {
+        image.mv(path.join(__dirname, ".." + savePath), (err) => {
           if (err) {
             reject(new Error("Error in uploading"));
           } else {
@@ -271,14 +271,14 @@ const addPost = async (req, res) => {
   }
 };
 const addComment = async (req, res) => {
-  try { 
+  try {
     const userId = req.user.id;
-    const postId =  req.params.id;
-    const {  comment } = req.body;
+    const postId = req.params.id;
+    const { comment } = req.body;
     const result = await sequelize.query(
       'INSERT INTO comments (comment, postId, userId) VALUES (?, ?, ?)',
       {
-        replacements: [comment, postId, userId ],
+        replacements: [comment, postId, userId],
         type: QueryTypes.INSERT
       }
     );
@@ -307,6 +307,23 @@ const getCommentsByPostId = async (req, res) => {
   }
 };
 
+const getPostByPostId = async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const comments = await sequelize.query(
+      'SELECT * FROM posts WHERE id = ?',
+      {
+        replacements: [postId],
+        type: QueryTypes.SELECT
+      }
+    );
+    res.json(comments);
+  } catch (error) {
+    console.error('Error getting comments:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 
 
 const addlike = async (req, res) => {
@@ -314,7 +331,7 @@ const addlike = async (req, res) => {
     const userId = req.user.id;
     const { postId } = req.body;
     const [like] = await sequelize.query(
-      'SELECT * FROM likes WHERE postId = ? AND userId = ?',
+      'SELECT * FROM likes WHERE postId = ? AND userId = ? ',
       {
         replacements: [postId, userId],
         type: QueryTypes.SELECT
@@ -374,12 +391,11 @@ const countLike = async (req, res) => {
 // Get total number of likes and dislikes for a post
 const getPost = async (req, res) => {
   try {
-    const posts = await sequelize.query(
+    const posts = await sequelize.query(  
       `
-      SELECT p.id, p.des, u.username as userName, COUNT(c.id) as commentCount, COUNT(l.id) as likeCount
+      SELECT p.id, p.des, p.userId, u.name as userName, (SELECT GROUP_CONCAT(comment SEPARATOR ', ') FROM comments c WHERE c.postId = p.id) as comments, COUNT(l.id) as likeCount
       FROM posts p
-      LEFT JOIN comments c ON c.postId = p.id
-      LEFT JOIN likes l ON l.postId = p.id
+      LEFT JOIN likes_post l ON l.post_id = p.id
       LEFT JOIN users u ON p.userId = u.id
       GROUP BY p.id;
       `,
@@ -392,77 +408,131 @@ const getPost = async (req, res) => {
   }
 };
 
+const addlike_dislike = async (req, res) => {
+  const { postId } = req.body;
+  const userId = req.user.id;
 
-const follow = async (req, res) => {
-  const { id } = req.params;
-  const user_id = req.user.id;
-
-  // Check if the user exists
-  const [user] = await sequelize.query('SELECT * FROM users WHEREid = ?', [id]);
-  if (user.length === 0) {
-    return res.status(404).json({ message: 'User not found' });
-  }
-
-  // Check if the user is already following
-  const [follow] = await sequelize.query(
-    'SELECT * FROM followers WHERE follower_id = ? AND following_id = ?',
-    [user_id, id]
-  );
-  if (follow.length > 0) {
-    return res.status(400).json({ message: 'Already following' });
-  }
-
-  // Insert the new follower into the database
-  const result = await sequelize.query(
-    'INSERT INTO followers (follower_id, following_id) VALUES (?, ?)',
-    [user_id, id]
+  const isFollowing = await sequelize.query(
+    'SELECT like_type FROM likes_post WHERE post_id = ? AND user_id = ?',
+    {
+      replacements: [postId, userId],
+      type: sequelize.QueryTypes.SELECT
+    }
   );
 
-  res.json({ message: 'Followed successfully' });
+
+  // console.log(isFollowing[0].like_type);
+
+  if(!isFollowing){
+    await sequelize.query(
+      'INSERT INTO likes_post (post_id, user_id, like_type) VALUES (?, ?, ?)',
+      {
+        replacements: [postId, userId, 'like'],
+        type: sequelize.QueryTypes.INSERT
+      }
+    );
+  }else if (isFollowing[0].like_type == 'like'){
+    await sequelize.query(
+      'UPDATE likes_post SET like_type = ? WHERE post_id = ? AND user_id = ?',
+      {
+        replacements: ['dislike', postId, userId ],
+        type: sequelize.QueryTypes.INSERT
+      }
+    );
+  }else {
+    await sequelize.query(
+      'UPDATE likes_post SET like_type = ? WHERE post_id = ? AND user_id = ?',
+      {
+        replacements: ['like', postId, userId ],
+        type: sequelize.QueryTypes.INSERT
+      }
+    );
+  }
+
+
+  res.json({ message: 'Like or dislike successfully added' });
+
 };
 
+const adddislike = async (req, res) => {
+  const { postId } = req.body;
+  const userId = req.user.id;
 
-
-const unfollow = async (req, res) => {
-  const { id } = req.params;
-  const user_id = req.user.id;
-
-  // Check if the user exists
-  const [user] = await sequelize.query('SELECT * FROM users WHERE id = ?', [id]);
-  if (user.length === 0) {
-    return res.status(404).json({ message: 'User not found' });
-  }
-
-  // Check if the user is already following
-  const [follow] = await sequelize.query(
-    'SELECT * FROM followers WHERE follower_id = ? AND following_id = ?',
-    [user_id, id]
-  );
-  if (follow.length === 0) {
-    return res.status(400).json({ message: 'Not following' });
-  }
-
-  // Delete the follower from the database
-  const result = await sequelize.query(
-    'DELETE FROM followers WHERE follower_id = ? AND following_id = ?',
-    [user_id, id]
+  await sequelize.query(
+    'INSERT INTO likes_post (post_id, user_id,like_type) VALUES (?, ?, ?)',
+    {
+      replacements: [postId, userId, 'like'],
+      type: sequelize.QueryTypes.INSERT
+    }
   );
 
-  res.json({ message: 'Unfollowed successfully' });
+  res.json({ message: 'Dislike successfully added' });
+}
+
+const getFollow = async (req, res) => {
+  const { postId } = req.body;
+  const userId = req.user.id;
+
+  try {
+    const [rows, fields] = await sequelize.query(
+      'SELECT likes, dislike FROM postId WHERE postId = ? AND userId = ?',
+      [postId, userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(200).json({ like: 0, dislike: 0 });
+    }
+
+    res.status(200).json({ like: rows[0].like, dislike: rows[0].dislike });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+
+const addFollow = async (req, res) => {
+  const { followingId } = req.body;
+  const userId = req.user.id;
+  console.log(followingId);
+
+  const isFollowing = await sequelize.query(
+    'SELECT * FROM user_follows WHERE user_id = ? AND following_user_id = ?',
+    {
+      replacements: [userId, followingId],
+      type: sequelize.QueryTypes.SELECT
+    }
+  );
+
+  if (isFollowing.length > 0) {
+    await sequelize.query(
+      'DELETE FROM user_follows WHERE user_id = ? AND following_user_id = ?',
+      {
+        replacements: [userId, followingId],
+        type: sequelize.QueryTypes.DELETE
+      }
+    );
+
+    res.json({ message: 'Unfollowed successfully' });
+  } else {
+    await sequelize.query(
+      'INSERT INTO user_follows (user_id, following_user_id) VALUES (?, ?)',
+      {
+        replacements: [userId, followingId],
+        type: sequelize.QueryTypes.INSERT
+      }
+    );
+
+    res.json({ message: 'Followed successfully' });
+  }
 };
 
+// today complated task 
 
-const getFollowing = async (req, res) => {
-  const id = req.user.id;
 
-  // Count the number of followers for the user
-  const [result] = await sequelize.query(
-    'SELECT COUNT(*) as total FROM followers WHERE following_id = ?',
-    [id]
-  );
-
-  res.json({ total: result[0].total });
-};
+// like dislike api 
+// comment add on perticuler post 
+// count total number of like 
 
 
 
@@ -470,7 +540,4 @@ const getFollowing = async (req, res) => {
 
 
 
-
-
-
-module.exports = {follow,unfollow,getFollowing, createProduct, getAllProducts, getProductById, updateProduct, deleteProduct, searchProducts,addPost,countLike ,addlike, addComment, getPost, getCommentsByPostId};
+module.exports = { createProduct, addFollow, getAllProducts, getProductById, updateProduct, deleteProduct, searchProducts, addPost, countLike, getFollow, addlike, addlike_dislike, adddislike, addComment, getPost, getCommentsByPostId, getPostByPostId };

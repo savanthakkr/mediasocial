@@ -4,9 +4,9 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    username: '',
     email: '',
-    password: ''
+    password: '',
+    name: ''
   });
 
 
@@ -39,7 +39,7 @@ const Register = () => {
         if (xhr.status === 200) {
           const response = JSON.parse(xhr.responseText);
           console.log(response.data); 
-          navigate('/allPost');
+          navigate('/');
         } else {
           console.error(' registering :', xhr.statusText);
         }
@@ -67,14 +67,10 @@ const Register = () => {
         <div className="col-md-6">
           <h2>Register Book</h2>
           <form onSubmit={handleSubmit}>
-            {/* <div className="mb-3">
+             <div className="mb-3">
               <label htmlFor="name" className="form-label">Name</label>
-              <input type="text" className="form-control" id="Name" name="name" value={formData.name} onChange={handleInputChange} />
-            </div> */}
-            <div className="mb-3">
-              <label htmlFor="username" className="form-label">username</label>
-              <textarea className="form-control" id="username" name="username" value={formData.username} onChange={handleInputChange} />
-            </div>
+              <input type="text" className="form-control" id="name" name="name" value={formData.name} onChange={handleInputChange} />
+            </div> 
             <div className="mb-3">
               <label htmlFor="email" className="form-label">Email</label>
               <textarea className="form-control" id="Email" name="email" value={formData.email} onChange={handleInputChange} />

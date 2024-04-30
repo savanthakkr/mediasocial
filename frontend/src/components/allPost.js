@@ -1,13 +1,19 @@
 import { useNavigate } from 'react-router-dom';
+
+import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 const token = localStorage.getItem('accessToken');
 
 const Posts = () => {
   const [posts, setPosts] = useState([]);
+  // const [like, setLike] = useState(0);
+  const [dislike, setDislike] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [postUserId, setPostUserId] = useState(null);
 
   const navigate = useNavigate();
+
+  const [like, setLike] = React.useState(false);
 
   useEffect(() => {
     const fetchPosts = () => {
@@ -18,6 +24,7 @@ const Posts = () => {
         if (xhr.readyState === XMLHttpRequest.DONE) {
           if (xhr.status === 200) {
             setPosts(JSON.parse(xhr.responseText));
+            console.log(posts);
           } else {
             console.error('Error fetching products:', xhr.statusText);
           }
@@ -27,70 +34,6 @@ const Posts = () => {
     };
     fetchPosts();
   }, []);
-
-
-
-  useEffect((id) => {
-    const checkFollowingStatus = async () => {
-      try {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', `http://localhost:5000/api/api/getFollowing/${id}`, true);
-        xhr.setRequestHeader('Authorization', token);
-        xhr.onload = function () {
-          if (xhr.status === 200) {
-            setIsFollowing(xhr.responseText === 'true');
-          } else {
-            console.error('Error fetching following status:', xhr.statusText);
-          }
-        };
-        xhr.send();
-      } catch (error) {
-        console.error('Error fetching following status:', error);
-      }
-    };
-
-    if (token) {
-      checkFollowingStatus();
-    }
-  }, []);
-
-  const handleFollowClick = async (id) => {
-    try {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `http://localhost:5000/api/follow/${id}`, true);
-      xhr.setRequestHeader('Authorization', token);
-      xhr.onload = function () {
-        if (xhr.status === 200) {
-          setIsFollowing(true);
-          // Add your code here to show a success message or update the UI
-        } else {
-          console.error('Error following user:', xhr.responseText);
-        }
-      };
-      xhr.send();
-    } catch (error) {
-      console.error('Error following user:', error);
-    }
-  };
-
-  const handleUnfollowClick = async (id) => {
-    try {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `http://localhost:5000/api/unfollow/${id}`, true);
-      xhr.setRequestHeader('Authorization', token);
-      xhr.onload = function () {
-        if (xhr.status === 200) {
-          setIsFollowing(false);
-          // Add your code here to show a success message or update the UI
-        } else {
-          console.error('Error unfollowing user:', xhr.responseText);
-        }
-      };
-      xhr.send();
-    } catch (error) {
-      console.error('Error unfollowing user:', error);
-    }
-  };
 
   const handleAddPost = () => {
     navigate('/addPost');
@@ -124,26 +67,85 @@ const Posts = () => {
     // Add your code here to handle comment submission
   };
 
+  const handleFollowClick = async (userId) => {
+    try {
+      const response = await axios.post('http://localhost:5000/api/follow', { followingId: userId }, {
+        headers: {
+          Authorization: token,
+          'Content-Type': 'application/json'
+        }
+      });
 
+      if (response.status === 200) {
+        setPosts(prevPosts =>
+          prevPosts.map(post =>
+            userId === post.userId
+              ? { ...post, isFollowing: !post.isFollowing }
+              : post
+          )
+        );
+        if (response.data.message === 'Followed successfully') {
+          setIsFollowing(true);
+        } else if (response.data.message === 'Unfollowed successfully') {
+          setIsFollowing(false);
+        }
+        console.log(userId);
+      } else {
+        console.error('Error adding like:', response.data);
+      }
+    } catch (error) {
+      console.error('Error adding like:', error);
+    }
+  };
+
+
+  const handleLike = async (userId) => {
+    try {
+      const response = await axios.post('http://localhost:5000/api/adddlikedislike', { postId: userId }, {
+        headers: {
+          Authorization: token,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.status === 200) {
+        setPosts(prevPosts =>
+          prevPosts.map(post =>
+            userId === post.id
+          )
+        );
+        console.log(userId);
+      } else {
+        console.error('Error adding like:', response.data);
+      }
+    } catch (error) {
+      console.error('Error adding like:', error);
+    }
+  };
 
   return (
     <div>
       <button className="btn btn-primary btn-sm mx-3" type="button" onClick={handleAddPost}>Add Post</button>
-      <button className="btn btn-primary btn-sm mx-3" type="button" onClick={handleAddComment}>Add Comment</button>
       {posts.map((post) => (
-        <div key={post.id}>
-          <h2>Name:- {post.userName}</h2>
+<div key={post.id}>
           <h2>{post.des}</h2>
-          <p>Comments: {post.commentCount}</p>
+          <h2>{post.userId}</h2>
+          <h2>{post.userName}</h2>
+          <p>Comments: {post.comments}</p>
           <p>Likes: {post.likeCount}</p>
-          <button onClick={() => handleLikeClick(post.id)}>Like</button>
-          <button onClick={() => handleCommentClick(post.id)}>Comment</button>
+          <button onClick={() => handleLike(post.id)}>Like</button>
+          <button onClick={() => handleFollowClick(post.userId)}>
+            {post.isFollowing ? 'Unfollow' : 'Follow'}
+          </button>
           <button className="Edit" type="button" onClick={() => navigate(`/addComment/${post.id}`)}>
             Add Comment
           </button>
-          <button onClick={isFollowing ? handleUnfollowClick : handleFollowClick}>
-            {isFollowing ? 'Unfollow' : 'Follow'}
+          <button className="Edit" type="button" onClick={() => navigate(`/updateProduct/${post.id}`)}>
+            Add Comment
           </button>
+          {/* <button  onClick={() => handleLikeDislikeClick(post.id)}>
+            {like === 1 ? 'Unlike' : dislike === 1 ? 'Like' : 'Like'}
+          </button> */}
         </div>
 
       ))}
@@ -152,3 +154,4 @@ const Posts = () => {
 };
 
 export default Posts;
+
