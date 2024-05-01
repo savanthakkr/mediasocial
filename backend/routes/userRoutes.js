@@ -3,7 +3,7 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const { verifyToken } = require("../middlewares/roleMiddleware");
 
-const { registerUser, loginUser, getUserProfile, getImage, OTPVerify, sendPasswordOTP, OTPVerifyEmail, updatepassword } = userController; 
+const { registerUser,updateUserProfile, loginUser, getUserProfile, getImage, OTPVerify, sendPasswordOTP, OTPVerifyEmail, updatepassword } = userController; 
 
 // Register a new user
 router.post('/users/register', registerUser);
@@ -22,6 +22,8 @@ router.get('/users/profile/:id',verifyToken, getUserProfile);
 
 // Update user profile 
 router.put('/users/editProfile/:id',verifyToken, getImage); 
+
+router.put('/users/editProfile',verifyToken, updateUserProfile); 
 
 
 router.put('/users/updatePass',verifyToken, updatepassword); 

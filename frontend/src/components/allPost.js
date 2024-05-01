@@ -38,6 +38,9 @@ const Posts = () => {
   const handleAddPost = () => {
     navigate('/addPost');
   }
+  const handleUpdateProfile = () => {
+    navigate('/updateProfile');
+  }
   const handleAddComment = () => {
     navigate('/addComment');
   }
@@ -122,10 +125,16 @@ const Posts = () => {
       console.error('Error adding like:', error);
     }
   };
+  const handleLogout = () => {
+    //localStorage.removeItem('accessToken');
+    navigate('/');
+}
 
   return (
     <div>
       <button className="btn btn-primary btn-sm mx-3" type="button" onClick={handleAddPost}>Add Post</button>
+      <button className="btn btn-primary btn-sm mx-3" type="button" onClick={handleUpdateProfile}>Update Profile</button>
+      <button className="btn btn-warning btn-sm mx-5" type="button" onClick={handleLogout}>Log Out</button>
       {posts.map((post) => (
 <div key={post.id}>
           <h2>{post.des}</h2>
@@ -137,9 +146,9 @@ const Posts = () => {
           <button onClick={() => handleFollowClick(post.userId)}>
             {post.isFollowing ? 'Unfollow' : 'Follow'}
           </button>
-          <button className="Edit" type="button" onClick={() => navigate(`/addComment/${post.id}`)}>
+          {/* <button className="Edit" type="button" onClick={() => navigate(`/addComment/${post.id}`)}>
             Add Comment
-          </button>
+          </button> */}
           <button className="Edit" type="button" onClick={() => navigate(`/updateProduct/${post.id}`)}>
             Add Comment
           </button>

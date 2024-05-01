@@ -91,7 +91,7 @@ const UpdateProduct = () => {
             <label htmlFor="comment">comment</label>
             <input type="text" className="form-control" id="comment" name="comment" value={setFormData.comment} onChange={handleChange} />
           </div>
-          <button type="submit" className="btn btn-primary">Update product</button>
+          <button type="submit" className="btn btn-primary">Add Comment</button>
         </form>
       </div>
     </div>

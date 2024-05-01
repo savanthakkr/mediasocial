@@ -280,21 +280,38 @@ const loginUser = async (req, res) => {
 // Function to get user profile
 const getUserProfile = async (req, res) => {
   try {
-    const user = req.user
     const userId = req.user.id;
-    console.log(userId);
-
-    const getUser = await sequelize.query(
-      'SELECT * FROM users WHERE id = ?',
-      { replacements: [userId], type: QueryTypes.SELECT }
+    const user = await sequelize.query(
+      'SELECT * FROM users WHERE id = :id',
+      {
+        replacements: { userId },
+        type: sequelize.QueryTypes.SELECT
+      }
     );
-
-    if (getUser) {
-      return res.status(200).json({ user: getUser });
-    }
-
+    res.json(user);
   } catch (error) {
     console.error('Error fetching user profile:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    console.log(userId);
+    const { email, password, name } = req.body;
+
+    await sequelize.query(
+      'UPDATE users SET email = ?, password = ?, name = ? WHERE id = ?',
+      {
+        replacements: [email, password, name, userId],
+        type: sequelize.QueryTypes.UPDATE
+      }
+    );
+
+    res.json({ message: 'User profile updated successfully' });
+  } catch (error) {
+    console.error('Error updating user profile:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -364,6 +381,7 @@ const updatepassword = async (req, res) => {
 
 module.exports = {
   registerUser,
+  updateUserProfile,
   loginUser,
   getUserProfile,
   getImage,

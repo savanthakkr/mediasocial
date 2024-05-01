@@ -391,11 +391,11 @@ const countLike = async (req, res) => {
 // Get total number of likes and dislikes for a post
 const getPost = async (req, res) => {
   try {
-    const posts = await sequelize.query(  
+    const posts = await sequelize.query(
       `
-      SELECT p.id, p.des, p.userId, u.name as userName, (SELECT GROUP_CONCAT(comment SEPARATOR ', ') FROM comments c WHERE c.postId = p.id) as comments, COUNT(l.id) as likeCount
+      SELECT p.id, p.des, p.userId, u.name as userName, (SELECT GROUP_CONCAT(comment SEPARATOR ', ') FROM comments c WHERE c.postId = p.id) as comments,
+      (SELECT COUNT(*) FROM likes_post l WHERE l.post_id = p.id AND l.like_type = 'like') as likeCount
       FROM posts p
-      LEFT JOIN likes_post l ON l.post_id = p.id
       LEFT JOIN users u ON p.userId = u.id
       GROUP BY p.id;
       `,
@@ -412,47 +412,49 @@ const addlike_dislike = async (req, res) => {
   const { postId } = req.body;
   const userId = req.user.id;
 
-  const isFollowing = await sequelize.query(
-    'SELECT like_type FROM likes_post WHERE post_id = ? AND user_id = ?',
-    {
-      replacements: [postId, userId],
-      type: sequelize.QueryTypes.SELECT
+  try {
+    const isFollowing = await sequelize.query(
+      'SELECT like_type FROM likes_post WHERE post_id = :postId AND user_id = :userId',
+      {
+        replacements: { postId, userId },
+        type: sequelize.QueryTypes.SELECT
+      }
+    );
+
+    if (!isFollowing || !isFollowing.length) {
+      await sequelize.query(
+        'INSERT INTO likes_post (post_id, user_id, like_type) VALUES (:postId, :userId, :likeType)',
+        {
+          replacements: { postId, userId, likeType: 'like' },
+          type: sequelize.QueryTypes.INSERT
+        }
+      );
+    } else if (isFollowing[0].like_type === 'like') {
+      await sequelize.query(
+        'UPDATE likes_post SET like_type = :likeType WHERE post_id = :postId AND user_id = :userId',
+        {
+          replacements: { postId, userId, likeType: 'dislike' },
+          type: sequelize.QueryTypes.UPDATE
+        }
+      );
+    } else {
+      await sequelize.query(
+        'UPDATE likes_post SET like_type = :likeType WHERE post_id = :postId AND user_id = :userId',
+        {
+          replacements: { postId, userId, likeType: 'like' },
+          type: sequelize.QueryTypes.UPDATE
+        }
+      );
     }
-  );
 
-
-  // console.log(isFollowing[0].like_type);
-
-  if(!isFollowing){
-    await sequelize.query(
-      'INSERT INTO likes_post (post_id, user_id, like_type) VALUES (?, ?, ?)',
-      {
-        replacements: [postId, userId, 'like'],
-        type: sequelize.QueryTypes.INSERT
-      }
-    );
-  }else if (isFollowing[0].like_type == 'like'){
-    await sequelize.query(
-      'UPDATE likes_post SET like_type = ? WHERE post_id = ? AND user_id = ?',
-      {
-        replacements: ['dislike', postId, userId ],
-        type: sequelize.QueryTypes.INSERT
-      }
-    );
-  }else {
-    await sequelize.query(
-      'UPDATE likes_post SET like_type = ? WHERE post_id = ? AND user_id = ?',
-      {
-        replacements: ['like', postId, userId ],
-        type: sequelize.QueryTypes.INSERT
-      }
-    );
+    res.json({ message: 'Like or dislike successfully added' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred' });
   }
-
-
-  res.json({ message: 'Like or dislike successfully added' });
-
 };
+
+
 
 const adddislike = async (req, res) => {
   const { postId } = req.body;
@@ -527,6 +529,9 @@ const addFollow = async (req, res) => {
   }
 };
 
+
+
+
 // today complated task 
 
 
@@ -540,4 +545,4 @@ const addFollow = async (req, res) => {
 
 
 
-module.exports = { createProduct, addFollow, getAllProducts, getProductById, updateProduct, deleteProduct, searchProducts, addPost, countLike, getFollow, addlike, addlike_dislike, adddislike, addComment, getPost, getCommentsByPostId, getPostByPostId };
+module.exports = {  createProduct, addFollow, getAllProducts, getProductById, updateProduct, deleteProduct, searchProducts, addPost, countLike, getFollow, addlike, addlike_dislike, adddislike, addComment, getPost, getCommentsByPostId, getPostByPostId };

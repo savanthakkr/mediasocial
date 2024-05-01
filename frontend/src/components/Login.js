@@ -128,7 +128,8 @@ const Login = () => {
                         Login
                     </Button>
                 </Form>
-                <button type="submit" className="btn btn-primary" onClick={routeChange}>Register</button>
+                <br></br>
+                <button type="submit" className="btn btn-primary w-100" onClick={routeChange}>Register</button>
             </div>
             
         </Container>
