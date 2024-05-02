@@ -456,6 +456,10 @@ const addlike_dislike = async (req, res) => {
 
 
 
+
+
+
+
 const adddislike = async (req, res) => {
   const { postId } = req.body;
   const userId = req.user.id;
@@ -471,63 +475,108 @@ const adddislike = async (req, res) => {
   res.json({ message: 'Dislike successfully added' });
 }
 
-const getFollow = async (req, res) => {
-  const { postId } = req.body;
+
+
+
+
+
+
+
+const followUnfollow = async (req, res) => {
+  const { followingId } = req.body;
   const userId = req.user.id;
 
   try {
-    const [rows, fields] = await sequelize.query(
-      'SELECT likes, dislike FROM postId WHERE postId = ? AND userId = ?',
-      [postId, userId]
+    const isFollowing = await sequelize.query(
+      'SELECT followStatus FROM user_follows WHERE user_id = ? AND following_user_id = ?',
+      {
+        replacements: [userId, followingId],
+        type: sequelize.QueryTypes.SELECT
+      }
     );
-
-    if (rows.length === 0) {
-      return res.status(200).json({ like: 0, dislike: 0 });
+    if (!isFollowing || !isFollowing.length) {
+      await sequelize.query(
+        'INSERT INTO user_follows (following_user_id, user_id, followStatus) VALUES (?, ?, ?)',
+        {
+          replacements: [followingId, userId, 'follow'],
+          type: sequelize.QueryTypes.INSERT
+        }
+      );
+    } else if (isFollowing[0].followStatus === 'follow') {
+      await sequelize.query(
+        'UPDATE user_follows SET followStatus = ? WHERE following_user_id = ? AND user_id = ?',
+        {
+          replacements: ['unfollow', followingId, userId],
+          type: sequelize.QueryTypes.UPDATE
+        }
+      );
+    } else {
+      await sequelize.query(
+        'UPDATE user_follows SET followStatus = ? WHERE following_user_id = ? AND user_id = ?',
+        {
+          replacements: ['follow', followingId, userId],
+          type: sequelize.QueryTypes.UPDATE
+        }
+      );
     }
-
-    res.status(200).json({ like: rows[0].like, dislike: rows[0].dislike });
+    res.json({ message: 'follow or unfollow successfully added' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'An error occurred' });
   }
+};
+
+
+
+
+const sendMessage = async (req, res) => {
+  const { content } = req.body;
+  const receiverId = req.params.id;
+  console.log(receiverId);
+  const senderId = req.user.id;
+
+  await sequelize.query(
+    'INSERT INTO messages (sender_id, receiver_id, content, timestamp) VALUES (?, ?, ?, NOW())',
+    {
+      replacements: [senderId, receiverId, content],
+      type: sequelize.QueryTypes.INSERT
+    }
+  );
+
+  res.json({ message: 'Message sent successfully' });
 }
 
+const getMessages = async (req, res) => {
+  const receiverId = req.user.id;
+  console.log(receiverId);
+  const senderId = req.params.id;
 
-const addFollow = async (req, res) => {
-  const { followingId } = req.body;
-  const userId = req.user.id;
-  console.log(followingId);
-
-  const isFollowing = await sequelize.query(
-    'SELECT * FROM user_follows WHERE user_id = ? AND following_user_id = ?',
+  const messages = await sequelize.query(
+    'SELECT * FROM messages WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) ORDER BY timestamp ASC',
     {
-      replacements: [userId, followingId],
+      replacements: [senderId, receiverId, senderId, receiverId],
       type: sequelize.QueryTypes.SELECT
     }
   );
 
-  if (isFollowing.length > 0) {
-    await sequelize.query(
-      'DELETE FROM user_follows WHERE user_id = ? AND following_user_id = ?',
-      {
-        replacements: [userId, followingId],
-        type: sequelize.QueryTypes.DELETE
-      }
-    );
+  res.json(messages);
+}
 
-    res.json({ message: 'Unfollowed successfully' });
-  } else {
-    await sequelize.query(
-      'INSERT INTO user_follows (user_id, following_user_id) VALUES (?, ?)',
-      {
-        replacements: [userId, followingId],
-        type: sequelize.QueryTypes.INSERT
-      }
-    );
+const getMessagesSender = async (req, res) => {
+  const receiverId = req.params.id;
+  console.log(receiverId);
+  const senderId = req.user.id;
 
-    res.json({ message: 'Followed successfully' });
-  }
-};
+  const messages = await sequelize.query(
+    'SELECT * FROM messages WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) ORDER BY timestamp ASC',
+    {
+      replacements: [senderId, receiverId, senderId, receiverId],
+      type: sequelize.QueryTypes.SELECT
+    }
+  );
+
+  res.json(messages);
+}
 
 
 
@@ -545,4 +594,4 @@ const addFollow = async (req, res) => {
 
 
 
-module.exports = {  createProduct, addFollow, getAllProducts, getProductById, updateProduct, deleteProduct, searchProducts, addPost, countLike, getFollow, addlike, addlike_dislike, adddislike, addComment, getPost, getCommentsByPostId, getPostByPostId };
+module.exports = {followUnfollow, getMessages,getMessagesSender, sendMessage, createProduct, getAllProducts, getProductById, updateProduct, deleteProduct, searchProducts, addPost, countLike, addlike, addlike_dislike, adddislike, addComment, getPost, getCommentsByPostId, getPostByPostId };

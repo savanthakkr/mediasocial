@@ -8,6 +8,8 @@ const { sequelize, testConnection } = require('./config/database');
 const cors = require('cors');
 const fileUpload = require('express-fileupload')
 const path = require('path')
+const http = require('http');
+const socketIO = require('socket.io');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,19 +29,28 @@ testConnection()
     app.use('/api', categoryRoutes);
     app.use('/api', productRoutes);
 
+    const server = http.createServer(app);
+    const io = socketIO(server);
+
     
-    app.use((err, req, res, next) => {
-      console.error(err.stack);
-      res.status(500).send('Something went wrong!');
+
+    io.on('connection', (socket) => {
+      console.log('a user connected');
+
+      socket.on('disconnect', () => {
+        console.log('user disconnected');
+      });
+
+      socket.on('chat message', (msg) => {
+        console.log('message: ' + msg);
+        io.emit('chat message', msg);
+      });
     });
 
-    // Start the server
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
   })
   .catch(err => {
     console.error('Unable to start server:', err);
   });
-
-

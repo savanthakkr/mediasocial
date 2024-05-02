@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
-const { createProduct, getAllProducts, getProductById, updateProduct,addFollow, deleteProduct,getFollow, searchProducts,addPost,addComment,addlike,addlike_dislike,adddislike,countLike,getPost, getCommentsByPostId, getPostByPostId} = productController;
+const { createProduct, getAllProducts, getProductById,followUnfollow,getMessages,getMessagesSender, updateProduct,sendMessage, deleteProduct, searchProducts,addPost,addComment,addlike,addlike_dislike,adddislike,countLike,getPost, getCommentsByPostId, getPostByPostId} = productController;
 const { verifyToken } = require("../middlewares/roleMiddleware");
 
 // Create a new product
@@ -14,22 +14,23 @@ router.put('/addLike_dislike/:id',verifyToken, adddislike );
 
 router.post('/adddlikedislike',verifyToken, addlike_dislike);
 
+router.post('/sendMessage/:id',verifyToken, sendMessage);
 
+router.post('/userFollow',verifyToken, followUnfollow);
 
 router.post('/addComment/:id',verifyToken, addComment);
 
 router.post('/addlike',verifyToken, addlike);
 
-router.post('/follow',verifyToken, addFollow);
-
-router.get('/getFollow',verifyToken, getFollow);
-
 router.get('/countLike/:id',verifyToken, countLike);
+
+router.get('/getMessages/:id',verifyToken, getMessages);
+
+router.get('/getMessagesSender/:id',verifyToken, getMessagesSender);
 
 router.get('/comments/:id',verifyToken, getCommentsByPostId);
 
 router.get('/getPostId/:id',verifyToken, getPostByPostId);
-
 
 router.get('/getPost',verifyToken, getPost);
 
