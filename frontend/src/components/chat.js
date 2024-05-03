@@ -6,6 +6,7 @@ const ChatScreen = ({ userId, partnerUserId }) => {
   const [getMessage, getMessages] = useState([]);
   const [getMessageSender, getMessagesSender] = useState([]);
   const [message, setMessage] = useState("");
+  const [typingStatus, setTypingStatus] = useState("")
 
   const token = localStorage.getItem('accessToken');
   const postId = localStorage.getItem('accessPostId');
@@ -69,12 +70,27 @@ const ChatScreen = ({ userId, partnerUserId }) => {
     }
   };
 
+  useEffect(() => {
+    socket.on("new_message", (newMessage) => {
+      setMessage((prevMessages) => [...prevMessages, newMessage]);
+    });
+
+    return () => {
+      socket.off("new_message");
+    };
+  }, []);
+
+  useEffect(()=> {
+    socket.on("typingResponse", data => setTypingStatus(data))
+  }, [socket])
+
 
 
   return (
     <div>
       <h2>Chat with User {partnerUserId}</h2>
       <div>
+        <p>{typingStatus}</p>
         <h3>Incoming Messages:</h3>
         {getMessage.map((message) => (
         <div key={message.id}>
