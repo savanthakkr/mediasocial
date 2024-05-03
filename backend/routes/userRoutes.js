@@ -18,7 +18,7 @@ router.post('/users/otp', OTPVerify);
 router.post('/users/login', loginUser);
 
 // Get user profile by id
-router.get('/users/profile/:id',verifyToken, getUserProfile);
+router.get('/users/profile',verifyToken, getUserProfile);
 
 // Update user profile 
 router.put('/users/editProfile/:id',verifyToken, getImage); 

@@ -174,6 +174,8 @@ const registerUser = async (req, res) => {
 };
 
 
+
+
 const OTPVerifyEmail = async (req, res) => {
   try {
     const { otp } = req.body; // get both otp and email from request body
@@ -281,14 +283,14 @@ const loginUser = async (req, res) => {
 const getUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const user = await sequelize.query(
-      'SELECT * FROM users WHERE id = :id',
+    const users = await sequelize.query(
+      'SELECT * FROM users WHERE id != :userId',
       {
         replacements: { userId },
         type: sequelize.QueryTypes.SELECT
       }
     );
-    res.json(user);
+    res.json(users);
   } catch (error) {
     console.error('Error fetching user profile:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -379,10 +381,37 @@ const updatepassword = async (req, res) => {
   }
 };
 
+const createRoom = async (req, res) => {
+  try {
+
+
+    const existingUser = await sequelize.query('SELECT * FROM users WHERE email');
+
+    const { email, password, name } = req.body;
+
+
+    if(!existingUser){
+      const result = await sequelize.query(
+        'INSERT INTO users (email, password, name) VALUES (?, ?, ?)',
+        {
+          replacements: [email, password, name],
+          type: QueryTypes.INSERT
+        }
+      );
+    }else{
+      console.log("user already register ");
+    }
+  } catch (error) {
+    console.error('Error registering user:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 module.exports = {
   registerUser,
   updateUserProfile,
   loginUser,
+  createRoom,
   getUserProfile,
   getImage,
   OTPVerify,

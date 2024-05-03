@@ -138,12 +138,16 @@ const Posts = () => {
     //localStorage.removeItem('accessToken');
     navigate('/');
   }
+  const handleCreateRoomClick = () => {
+    navigate('/chatRoom');
+  };
 
   return (
     <div>
       <button className="btn btn-primary btn-sm mx-3" type="button" onClick={handleAddPost}>Add Post</button>
       <button className="btn btn-primary btn-sm mx-3" type="button" onClick={handleUpdateProfile}>Update Profile</button>
       <button className="btn btn-warning btn-sm mx-5" type="button" onClick={handleLogout}>Log Out</button>
+      <button onClick={handleCreateRoomClick}>Create Chat Room</button>
       {posts.map((post) => (
         <div key={post.id}>
           <h2>{post.des}</h2>

@@ -13,6 +13,7 @@ import AllPost from './components/allPost';
 import AddComment from './components/addComent';
 import UpdateProfile from './components/updateProfile';
 import Chat from './components/chat';
+import ChatRoom from './components/chatRoom';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
       <Route path="/" element={<Login />} />
       <Route path="/updateProfile" element={<UpdateProfile />} />
       <Route path="/addPost" element={<AddPost />} />
+      <Route path="/chatRoom" element={<ChatRoom />} />
       <Route path="/chat/:id" element={<Chat />} />
       <Route path="/addComment/:id" element={<AddComment />} />
       <Route path="/allPost" element={<AllPost />} />
