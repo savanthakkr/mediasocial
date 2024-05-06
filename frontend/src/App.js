@@ -14,6 +14,8 @@ import AddComment from './components/addComent';
 import UpdateProfile from './components/updateProfile';
 import Chat from './components/chat';
 import ChatRoom from './components/chatRoom';
+import UserRooms from './components/roomAll';
+import ChatRoomScreen from './components/chatRoomScreen';
 
 function App() {
   return (
@@ -31,6 +33,8 @@ function App() {
       <Route path='/otp' element={<OTPscreen/>}/>
       <Route path='/sendOTP' element={<SendOTPEmail/>}/>
       <Route path='/updatePass' element={<ForgatePass/>}/>
+      <Route path='/UserRooms' element={<UserRooms/>}/>
+      <Route path='/chatRoomScreen/:id' element={<ChatRoomScreen/>}/>
       
     </Routes>
   );

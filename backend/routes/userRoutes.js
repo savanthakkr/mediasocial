@@ -3,12 +3,16 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const { verifyToken } = require("../middlewares/roleMiddleware");
 
-const { registerUser,updateUserProfile, loginUser, getUserProfile, getImage, OTPVerify, sendPasswordOTP, OTPVerifyEmail, updatepassword } = userController; 
+const { registerUser,updateUserProfile, loginUser,sendMessageRoom,getMessagesSenderRoom,getMessagesRoom, findRoomByUserId, getUserProfile, getImage, OTPVerify,createRoom, sendPasswordOTP, OTPVerifyEmail, updatepassword } = userController; 
 
 // Register a new user
 router.post('/users/register', registerUser);
 
 router.post('/users/passwordOTP', sendPasswordOTP);
+
+router.post('/createRoom',verifyToken, createRoom);
+
+router.post('/sendMessageRoom/:id',verifyToken, sendMessageRoom);
 
 router.post('/users/otpEmail', OTPVerifyEmail);
 
@@ -19,6 +23,12 @@ router.post('/users/login', loginUser);
 
 // Get user profile by id
 router.get('/users/profile',verifyToken, getUserProfile);
+
+router.get('/getMessagesSenderRoom/:id',verifyToken, getMessagesSenderRoom);
+
+router.get('/getMessagesRoom/:id',verifyToken, getMessagesRoom);
+
+router.get('/findRoomByUserId/:id',verifyToken, findRoomByUserId);
 
 // Update user profile 
 router.put('/users/editProfile/:id',verifyToken, getImage); 

@@ -383,35 +383,118 @@ const updatepassword = async (req, res) => {
 
 const createRoom = async (req, res) => {
   try {
+    const { selectedUsers, selected_Users_Name } = req.body;
+    const userId = req.user.id;
 
 
-    const existingUser = await sequelize.query('SELECT * FROM users WHERE email');
+    const userSelected_id = JSON.stringify(selectedUsers);
+    const userSelected_Name = JSON.stringify(selected_Users_Name);
 
-    const { email, password, name } = req.body;
+    console.log(userSelected_id);
+    console.log(userSelected_Name);
 
 
-    if(!existingUser){
-      const result = await sequelize.query(
-        'INSERT INTO users (email, password, name) VALUES (?, ?, ?)',
-        {
-          replacements: [email, password, name],
-          type: QueryTypes.INSERT
-        }
-      );
-    }else{
-      console.log("user already register ");
-    }
+    
+
+    console.log(selectedUsers);
+
+    await sequelize.query(
+      'INSERT INTO rooms (user_id, userSelected_Name, created_user_id) VALUES (?, ?, ?)',
+      {
+        replacements: [userSelected_id,userSelected_Name, userId],
+        type: sequelize.QueryTypes.INSERT
+      }
+    );
   } catch (error) {
-    console.error('Error registering user:', error);
+    console.error('Error creating room:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
+
+const findRoomByUserId = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const room = await sequelize.query(
+      'SELECT * FROM rooms WHERE user_id = ? OR created_user_id = ?',
+      {
+        type: sequelize.QueryTypes.SELECT,
+        replacements: [userId, userId],
+      }
+    );
+
+    if (room.length === 0) {
+      res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+
+    res.json(room);
+  } catch (error) {
+    console.error('Error finding room by user ID:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+const sendMessageRoom = async (req, res) => {
+  const { content } = req.body;
+  const receiverId = req.params.id;
+  console.log(receiverId);
+  const senderId = req.user.id;
+
+  await sequelize.query(
+    'INSERT INTO group_chat (user_id, room_id, created_at, content) VALUES (?, ?, NOW(), ?)',
+    {
+      replacements: [senderId, receiverId, content],
+      type: sequelize.QueryTypes.INSERT
+    }
+  );
+
+  res.json({ message: 'Message sent successfully' });
+}
+
+const getMessagesRoom = async (req, res) => {
+  const receiverId = req.user.id;
+  console.log(receiverId);
+  const senderId = req.params.id;
+
+  const messages = await sequelize.query(
+    'SELECT * FROM group_chat WHERE (user_id = ? AND room_id = ?) OR (user_id = ? AND room_id = ?) ORDER BY created_at ASC',
+    {
+      replacements: [senderId, receiverId, senderId, receiverId],
+      type: sequelize.QueryTypes.SELECT
+    }
+  );
+
+  res.json(messages);
+}
+
+const getMessagesSenderRoom = async (req, res) => {
+  const receiverId = req.params.id;
+  console.log(receiverId);
+  const senderId = req.user.id;
+
+  const messages = await sequelize.query(
+    'SELECT * FROM group_chat WHERE (user_id = ? AND room_id = ?) OR (user_id = ? AND room_id = ?) ORDER BY created_at ASC',
+    {
+      replacements: [senderId, receiverId, senderId, receiverId],
+      type: sequelize.QueryTypes.SELECT
+    }
+  );
+
+  res.json(messages);
+}
+
 module.exports = {
   registerUser,
+  getMessagesSenderRoom,
+  sendMessageRoom,
+  getMessagesRoom,
   updateUserProfile,
   loginUser,
   createRoom,
+  findRoomByUserId,
   getUserProfile,
   getImage,
   OTPVerify,

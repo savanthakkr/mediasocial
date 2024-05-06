@@ -1,32 +1,45 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const ChatRoom = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [selected_Users_Name, selectedUsersName] = useState([]);
+  
   const [roomId, setRoomId] = useState(null);
   const [posts, setPosts] = useState([]);
   const navigate = useNavigate();
 
 
   const token = localStorage.getItem('accessToken');
-
   const createRoom = async () => {
     console.log(...selectedUsers);
-    const response = await fetch('http://localhost:5000/api/create-room', {
-      body: JSON.stringify({ selectedUsers }),
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-    });
+    const token = localStorage.getItem('accessToken');
   
-    if (!response.ok) {
-      throw new Error('Error in the API request');
+    try {
+      const response = await axios.post('http://localhost:5000/api/createRoom', {
+        selectedUsers,selected_Users_Name
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token,
+        },
+      });
+  
+      if (response.status !== 200) {
+        throw new Error('Error in the API request');
+      }
+  
+      const data = response.data;
+      setRoomId(data.roomId);
+    } catch (error) {
+      console.error('Error creating room:', error);
+      // Handle error here
     }
-  
-    const data = await response.json();
-    setRoomId(data.roomId);
   };
+
+
+  
 
 
 
@@ -46,7 +59,6 @@ useEffect(() => {
           }
         }
       };
-      xhr.send();
     };
 
 
@@ -71,7 +83,8 @@ useEffect(() => {
               checked={selectedUsers.includes(user.id)}
               onChange={(e) => {
                 if (e.target.checked) {
-                  setSelectedUsers([...selectedUsers, user.id, user.name]);
+                  setSelectedUsers([...selectedUsers, user.id]);
+                  selectedUsersName([...selected_Users_Name, user.name])
                 } else {
                   setSelectedUsers(selectedUsers.filter((id) => id !== user.id));
                 }
@@ -87,4 +100,8 @@ useEffect(() => {
 };
 
 export default ChatRoom;
+
+
+
+
 
