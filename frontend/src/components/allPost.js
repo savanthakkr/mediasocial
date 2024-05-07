@@ -172,7 +172,7 @@ const Posts = () => {
           </button>
           <button className="btn btn-primary btn-sm mx-5" type="button" onClick={() => {
             localStorage.setItem('accessPostId', post.userId);
-            navigate(`/chat/${localStorage.getItem('accessPostId')}`);
+            navigate(`/chatBody/${localStorage.getItem('accessPostId')}`);
           }}>
             Chat
           </button>

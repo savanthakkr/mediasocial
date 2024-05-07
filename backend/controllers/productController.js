@@ -552,9 +552,9 @@ const getMessages = async (req, res) => {
   const senderId = req.params.id;
 
   const messages = await sequelize.query(
-    'SELECT * FROM messages WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) ORDER BY timestamp ASC',
+    'SELECT * FROM messages ORDER BY timestamp ASC',
     {
-      replacements: [senderId, receiverId, senderId, receiverId],
+      replacements: [senderId, receiverId],
       type: sequelize.QueryTypes.SELECT
     }
   );
@@ -568,7 +568,7 @@ const getMessagesSender = async (req, res) => {
   const senderId = req.user.id;
 
   const messages = await sequelize.query(
-    'SELECT * FROM messages WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) ORDER BY timestamp ASC',
+    'SELECT * FROM messages WHERE (sender_id = ? AND receiver_id = ?)  ORDER BY timestamp ASC',
     {
       replacements: [senderId, receiverId, senderId, receiverId],
       type: sequelize.QueryTypes.SELECT

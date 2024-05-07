@@ -3,10 +3,10 @@ import axios from "axios";
 import io from 'socket.io-client';
 
 const ChatScreen = ({ userId, partnerUserId }) => {
-  const [getMessage, getMessages] = useState([]);
-  const [getMessageSender, getMessagesSender] = useState([]);
+  const [getMessage, setMessages] = useState([]);
+  const [getMessageSender, setMessagesSender] = useState([]);
   const [message, setMessage] = useState("");
-  const [typingStatus, setTypingStatus] = useState("")
+  const [typingStatus, setTypingStatus] = useState(false);
 
   const token = localStorage.getItem('accessToken');
   const postId = localStorage.getItem('accessPostId');
@@ -16,6 +16,11 @@ const ChatScreen = ({ userId, partnerUserId }) => {
   });
 
   useEffect(() => {
+    if (!token || !postId) {
+      console.error("Missing access token or post ID");
+      return;
+    }
+
     const fetchMessages = async () => {
       try {
         const response = await axios.get(`http://localhost:5000/api/getMessages/${postId}`, {
@@ -24,30 +29,73 @@ const ChatScreen = ({ userId, partnerUserId }) => {
             'Content-Type': 'application/json'
           }
         });
-        getMessages(response.data);
-        console.log(getMessage);
+        setMessages(response.data);
       } catch (error) {
         console.error("Error fetching messages:", error);
       }
     };
 
-    const fetchMessagesSender = async () => {
-        try {
-          const response = await axios.get(`http://localhost:5000/api/getMessagesSender/${postId}`, {
-            headers: {
-              Authorization: token,
-              'Content-Type': 'application/json'
-            }
-          });
-          getMessagesSender(response.data);
-          console.log(getMessage);
-        } catch (error) {
-          console.error("Error fetching messages:", error);
-        }
-      };
-      fetchMessagesSender();
     fetchMessages();
   }, [token, postId]);
+
+  useEffect(() => {
+    if (!token || !postId) {
+      console.error("Missing access token or post ID");
+      return;
+    }
+
+    const fetchMessagesSender = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/api/getMessagesSender/${postId}`, {
+          headers: {
+            Authorization: token,
+            'Content-Type': 'application/json'
+}
+        });
+        setMessagesSender(response.data);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
+    };
+
+    fetchMessagesSender();
+  }, [token, postId]);
+
+  useEffect(() => {
+    socket.on("new_message", (newMessage) => {
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
+    });
+
+    return () => {
+      socket.off("new_message");
+    };
+  }, []);
+
+  useEffect(()=> {
+    socket.on("typingResponse", (data) => {
+      setTypingStatus(data.typing);
+    });
+
+    return () => {
+      socket.off("typingResponse");
+    };
+  }, []);
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter") {
+      sendMessage();
+    } else {
+      const debounce = setTimeout(() => {
+        socket.emit("typing", { userId, partnerUserId, typing: true });
+      }, 500);
+
+      return () => clearTimeout(debounce);
+    }
+  };
+
+  const handleKeyUp = () => {
+    socket.emit("stop typing", { userId, partnerUserId, typing: false });
+  };
 
   const sendMessage = async () => {
     if (message.trim() !== "") {
@@ -62,7 +110,7 @@ const ChatScreen = ({ userId, partnerUserId }) => {
               }
         });
 
-        setMessage((prevMessages) => [...prevMessages, response.data]);
+        setMessages((prevMessages) => [...prevMessages, response.data]);
         setMessage("");
       } catch (error) {
         console.error("Error sending message:", error);
@@ -71,26 +119,14 @@ const ChatScreen = ({ userId, partnerUserId }) => {
   };
 
   useEffect(() => {
-    socket.on("new_message", (newMessage) => {
-      setMessage((prevMessages) => [...prevMessages, newMessage]);
-    });
-
-    return () => {
-      socket.off("new_message");
-    };
-  }, []);
-
-  useEffect(()=> {
-    socket.on("typingResponse", data => setTypingStatus(data))
-  }, [socket])
-
-
+    console.log(getMessage);
+  }, [getMessage]);
 
   return (
     <div>
       <h2>Chat with User {partnerUserId}</h2>
       <div>
-        <p>{typingStatus}</p>
+        <p>{typingStatus ? "Typing..." : ""}</p>
         <h3>Incoming Messages:</h3>
         {getMessage.map((message) => (
         <div key={message.id}>
@@ -111,16 +147,14 @@ const ChatScreen = ({ userId, partnerUserId }) => {
         type="text"
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        onKeyPress={(e) => {
-          if (e.key === "Enter") {
-            sendMessage();
-          }
-        }}
+        onKeyDown={handleKeyDown}
+        onKeyUp={handleKeyUp}
       />
-      <button onClick={() => sendMessage()}>Send</button>
+      <button onClick={sendMessage}>Send</button>
     </div>
   );
 
 };
+
 
 export default ChatScreen;

@@ -9,7 +9,7 @@ const cors = require('cors');
 const fileUpload = require('express-fileupload')
 const path = require('path')
 const http = require('http');
-const { soket } = require('./controllers/soketController');
+const { socket: socketFunction } = require('./controllers/soketController');
 
 
 const app = express();
@@ -31,7 +31,7 @@ testConnection()
     app.use('/api', productRoutes);
 
     const server = http.createServer(app);
-    soket(server);
+    socketFunction(server);
 
     server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);

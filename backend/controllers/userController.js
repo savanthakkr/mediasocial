@@ -149,14 +149,17 @@ const sendPasswordOTP = async (req, res) => {
 
 const registerUser = async (req, res) => {
   try {
-
-
-    const existingUser = await sequelize.query('SELECT * FROM users WHERE email');
-
     const { email, password, name } = req.body;
 
+    const existingUser = await sequelize.query(
+      'SELECT * FROM users WHERE email = ?',
+      {
+        replacements: [email],
+        type: QueryTypes.SELECT
+      }
+    );
 
-    if(!existingUser){
+    if (existingUser.length === 0) {
       const result = await sequelize.query(
         'INSERT INTO users (email, password, name) VALUES (?, ?, ?)',
         {
@@ -164,15 +167,15 @@ const registerUser = async (req, res) => {
           type: QueryTypes.INSERT
         }
       );
-    }else{
-      console.log("user already register ");
+    } else {
+      console.log("user already registered");
+      res.status(400).json({ error: 'User already registered' });
     }
   } catch (error) {
     console.error('Error registering user:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 
 
 
@@ -416,11 +419,20 @@ const findRoomByUserId = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const room = await sequelize.query(
-      'SELECT * FROM rooms WHERE user_id = ? OR created_user_id = ?',
+    const rooms = await sequelize.query(
+      'SELECT user_id FROM rooms ',
       {
         type: sequelize.QueryTypes.SELECT,
-        replacements: [userId, userId],
+      }
+    );
+
+    console.log(rooms[0].user_id);
+
+    const room = await sequelize.query(
+      'SELECT * FROM rooms WHERE user_id IN (?) OR created_user_id = ?',
+      {
+        type: sequelize.QueryTypes.SELECT,
+        replacements: [rooms[0].user_id, userId],
       }
     );
 

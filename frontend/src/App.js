@@ -14,9 +14,14 @@ import AddComment from './components/addComent';
 import UpdateProfile from './components/updateProfile';
 import Chat from './components/chat';
 import ChatRoom from './components/chatRoom';
+import socketIO from "socket.io-client"
 import UserRooms from './components/roomAll';
 import ChatRoomScreen from './components/chatRoomScreen';
+import ChatBody from './components/chatScreen';
 
+const socket = socketIO.connect('http://localhost:5000', {
+    transports: ['websocket', 'polling']
+  });
 function App() {
   return (
     <Routes>
@@ -25,6 +30,7 @@ function App() {
       <Route path="/addPost" element={<AddPost />} />
       <Route path="/chatRoom" element={<ChatRoom />} />
       <Route path="/chat/:id" element={<Chat />} />
+      <Route path="/chatBody/:id" element={<ChatBody socket={socket} />} />
       <Route path="/addComment/:id" element={<AddComment />} />
       <Route path="/allPost" element={<AllPost />} />
       <Route path="/search" element={<Search />} />
